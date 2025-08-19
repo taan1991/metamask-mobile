@@ -1,5 +1,6 @@
 import {
   FeatureId,
+  GenericQuoteRequest,
   QuoteMetadata,
   QuoteResponse,
 } from '@metamask/bridge-controller';
@@ -67,18 +68,20 @@ async function getSingleBridgeQuote(
 
   const { BridgeController } = Engine.context;
 
+  const quoteRequest: GenericQuoteRequest = {
+    destChainId: targetChainId,
+    destTokenAddress: targetTokenAddress,
+    destWalletAddress: from,
+    gasIncluded: false,
+    insufficientBal: true,
+    srcChainId: sourceChainId,
+    srcTokenAddress: sourceTokenAddress,
+    srcTokenAmount: sourceTokenAmount,
+    walletAddress: from,
+  };
+
   const quotes = await BridgeController.fetchQuotes(
-    {
-      destChainId: targetChainId,
-      destTokenAddress: targetTokenAddress,
-      destWalletAddress: from,
-      gasIncluded: false,
-      insufficientBal: true,
-      srcChainId: sourceChainId,
-      srcTokenAddress: sourceTokenAddress,
-      srcTokenAmount: sourceTokenAmount,
-      walletAddress: from,
-    },
+    quoteRequest,
     abort.signal,
     FeatureId.PERPS,
   );
@@ -87,10 +90,11 @@ async function getSingleBridgeQuote(
     throw new Error('No quotes found');
   }
 
-  return getActiveQuote(quotes, gasFeeEstimates);
+  return getActiveQuote(quoteRequest, quotes, gasFeeEstimates);
 }
 
 function getActiveQuote(
+  quoteRequest: GenericQuoteRequest,
   quotes: QuoteResponse[],
   gasFeeEstimates: GasFeeEstimates,
 ): TransactionBridgeQuote {
@@ -104,6 +108,7 @@ function getActiveQuote(
         ...fullState?.engine?.backgroundState,
         BridgeController: {
           ...fullState?.engine?.backgroundState?.BridgeController,
+          quoteRequest,
           quotes,
         },
         ...(gasFeeEstimates

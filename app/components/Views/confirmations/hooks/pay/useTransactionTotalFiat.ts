@@ -60,8 +60,7 @@ export function useTransactionTotalFiat() {
 
 function getQuoteCostFiat(quote: TransactionBridgeQuote): BigNumber {
   const gasCost = new BigNumber(quote.totalMaxNetworkFee.valueInCurrency ?? 0);
-  const cost = new BigNumber(quote.cost.valueInCurrency ?? 0);
-  const amount = new BigNumber(quote.adjustedReturn.valueInCurrency ?? 0);
+  const cost = new BigNumber(quote.sentAmount.valueInCurrency ?? 0);
 
-  return amount.plus(gasCost).plus(cost);
+  return cost.plus(gasCost);
 }
