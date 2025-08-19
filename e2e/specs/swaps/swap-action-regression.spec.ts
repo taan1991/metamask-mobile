@@ -28,7 +28,7 @@ import { prepareSwapsTestEnvironment } from './helpers/prepareSwapsTestEnvironme
 const fixtureServer = new FixtureServer();
 
 // eslint-disable-next-line jest/no-disabled-tests
-describe.skip(Regression('Multiple Swaps from Actions'), () => {
+describe(Regression('Multiple Swaps from Actions'), () => {
   const FIRST_ROW: number = 0;
   const SECOND_ROW: number = 1;
   let mockServer: Mockttp;
@@ -79,7 +79,9 @@ describe.skip(Regression('Multiple Swaps from Actions'), () => {
     "should swap $type token '$sourceTokenSymbol' to '$destTokenSymbol' on chainID='$chainId",
     async ({ type, quantity, sourceTokenSymbol, destTokenSymbol, chainId }) => {
       await TabBarComponent.tapActions();
-      await Assertions.checkIfVisible(WalletActionsBottomSheet.swapButton);
+      await Assertions.expectElementToBeVisible(
+        WalletActionsBottomSheet.swapButton,
+      );
       await WalletActionsBottomSheet.tapSwapButton();
 
       // Submit the Swap
@@ -91,25 +93,25 @@ describe.skip(Regression('Multiple Swaps from Actions'), () => {
       );
 
       // Check the swap activity completed
-      await Assertions.checkIfVisible(ActivitiesView.title);
-      await Assertions.checkIfVisible(
+      await Assertions.expectElementToBeVisible(ActivitiesView.title);
+      await Assertions.expectElementToBeVisible(
         ActivitiesView.swapActivityTitle(sourceTokenSymbol, destTokenSymbol),
       );
-      await Assertions.checkIfElementToHaveText(
+      await Assertions.expectElementToHaveText(
         ActivitiesView.transactionStatus(FIRST_ROW),
         ActivitiesViewSelectorsText.CONFIRM_TEXT,
-        60000,
+        { timeout: 60000 },
       );
 
       // Check the token approval completed
       if (type === 'unapproved') {
-        await Assertions.checkIfVisible(
-          ActivitiesView.tokenApprovalActivity(sourceTokenSymbol),
+        await Assertions.expectElementToBeVisible(
+          ActivitiesView.approveActivity,
         );
-        await Assertions.checkIfElementToHaveText(
+        await Assertions.expectElementToHaveText(
           ActivitiesView.transactionStatus(SECOND_ROW),
           ActivitiesViewSelectorsText.CONFIRM_TEXT,
-          60000,
+          { timeout: 60000 },
         );
       }
     },
