@@ -21,7 +21,7 @@ import { submitSwapUnifiedUI } from './helpers/swap-unified-ui';
 import { AnvilManager } from '../../seeder/anvil-manager';
 import { swapSpecificMock } from './helpers/constants';
 import { stopMockServer } from '../../api-mocking/mock-server.js';
-import { startMockServer } from './helpers/swap-mocks';
+import { startSwapsMockServer } from './helpers/swap-mocks';
 import { prepareSwapsTestEnvironment } from './helpers/prepareSwapsTestEnvironment';
 import WalletView from '../../pages/wallet/WalletView';
 
@@ -44,7 +44,7 @@ describe(Regression('Multiple Swaps from Actions'), () => {
     });
 
     const mockServerPort = getMockServerPort();
-    mockServer = await startMockServer(swapSpecificMock, mockServerPort);
+    mockServer = await startSwapsMockServer(swapSpecificMock, mockServerPort);
 
     await TestHelpers.reverseServerPort();
     const fixture = new FixtureBuilder()

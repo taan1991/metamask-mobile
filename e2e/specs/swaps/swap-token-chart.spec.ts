@@ -24,7 +24,7 @@ import Ganache from '../../../app/util/test/ganache';
 import { swapSpecificMock } from './helpers/constants';
 import { submitSwapUnifiedUI } from './helpers/swap-unified-ui';
 import { stopMockServer } from '../../api-mocking/mock-server';
-import { startMockServer } from './helpers/swap-mocks';
+import { startSwapsMockServer } from './helpers/swap-mocks';
 import { defaultGanacheOptions } from '../../framework/Constants';
 import { prepareSwapsTestEnvironment } from './helpers/prepareSwapsTestEnvironment';
 
@@ -40,7 +40,7 @@ describe(Regression('Swap from Token view'), (): void => {
     await localNode.start({ ...defaultGanacheOptions, chainId: 1 });
 
     const mockServerPort = getMockServerPort();
-    mockServer = await startMockServer(swapSpecificMock, mockServerPort);
+    mockServer = await startSwapsMockServer(swapSpecificMock, mockServerPort);
 
     await TestHelpers.reverseServerPort();
     const fixture = new FixtureBuilder()

@@ -12,7 +12,7 @@ import { SmokeTrade } from '../../tags.js';
 import ActivitiesView from '../../pages/Transactions/ActivitiesView';
 import { ActivitiesViewSelectorsText } from '../../selectors/Transactions/ActivitiesView.selectors';
 import { EventPayload, getEventsPayloads } from '../analytics/helpers';
-import { startMockServer } from './helpers/swap-mocks';
+import { startSwapsMockServer } from './helpers/swap-mocks';
 import { submitSwapUnifiedUI } from './helpers/swap-unified-ui';
 import { loginToApp } from '../../viewHelper';
 import { prepareSwapsTestEnvironment } from './helpers/prepareSwapsTestEnvironment';
@@ -34,7 +34,7 @@ describe(SmokeTrade('Swap from Actions'), (): void => {
 
   beforeAll(async (): Promise<void> => {
     mockServerPort = getMockServerPort();
-    mockServer = (await startMockServer(
+    mockServer = (await startSwapsMockServer(
       swapSpecificMock,
       mockServerPort,
     )) as MockttpServer;
