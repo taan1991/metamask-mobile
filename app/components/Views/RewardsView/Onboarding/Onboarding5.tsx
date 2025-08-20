@@ -24,6 +24,7 @@ import {
   AlignItems,
   JustifyContent,
 } from '../../../UI/Box/box.types';
+import Engine from '../../../../core/Engine';
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
@@ -123,11 +124,15 @@ const Onboarding5: React.FC = () => {
   const [referralCode, setReferralCode] = useState('');
 
   const handleSkip = () => {
-    // Engine.context.RewardsController.resetOnboardingState();
+    // Reset onboarding state so we can jump from step 1 to 5 next time
+    Engine.context.RewardsController.resetOnboardingState();
     navigation.reset({
       index: 0,
       routes: [{ name: Routes.WALLET.HOME }],
     });
+
+    // Debug: Clear onboarding completed flag
+    // StorageWrapper.clearAll();
   };
 
   return (

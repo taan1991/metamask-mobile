@@ -18,6 +18,8 @@ import Engine from '../../../../core/Engine';
 import { OnboardingStep } from '../../../../core/Engine/controllers/rewards-controller/types';
 import Routes from '../../../../constants/navigation/Routes';
 import { Colors } from '../../../../util/theme/models';
+import StorageWrapper from '../../../../store/storage-wrapper';
+import { REWARDS_ONBOARDING_COMPLETED_KEY } from '../../../../util/rewards';
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
@@ -79,9 +81,12 @@ const Onboarding4: React.FC = () => {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     // Update controller state to step 4
     Engine.context.RewardsController.setOnboardingStep(OnboardingStep.STEP_5);
+
+    // Store onboarding completion flag
+    await StorageWrapper.setItem(REWARDS_ONBOARDING_COMPLETED_KEY, 'true');
 
     navigation.navigate(Routes.REWARDS_ONBOARDING_5);
   };

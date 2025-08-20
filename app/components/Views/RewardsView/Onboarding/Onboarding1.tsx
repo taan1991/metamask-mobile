@@ -5,6 +5,7 @@ import { useTheme } from '../../../../util/theme';
 import Engine from '../../../../core/Engine';
 import { OnboardingStep } from '../../../../core/Engine/controllers/rewards-controller/types';
 import Routes from '../../../../constants/navigation/Routes';
+import StorageWrapper from '../../../../store/storage-wrapper';
 import Text, {
   TextVariant,
 } from '../../../../component-library/components/Texts/Text';
@@ -18,6 +19,7 @@ import {
   IconName,
 } from '@metamask/design-system-react-native';
 import { Colors } from '../../../../util/theme/models';
+import { REWARDS_ONBOARDING_COMPLETED_KEY } from '../../../../util/rewards';
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
@@ -63,10 +65,21 @@ const Onboarding1: React.FC = () => {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
-  const handleNext = () => {
-    // Update controller state to step 2
-    Engine.context.RewardsController.setOnboardingStep(OnboardingStep.STEP_2);
-    navigation.navigate(Routes.REWARDS_ONBOARDING_2);
+  const handleNext = async () => {
+    // Check if onboarding was already completed
+    const isCompleted = await StorageWrapper.getItem(
+      REWARDS_ONBOARDING_COMPLETED_KEY,
+    );
+
+    if (isCompleted === 'true') {
+      // Jump directly to step 5 if already completed
+      Engine.context.RewardsController.setOnboardingStep(OnboardingStep.STEP_5);
+      navigation.navigate(Routes.REWARDS_ONBOARDING_5);
+    } else {
+      // Normal flow - move to step 2
+      Engine.context.RewardsController.setOnboardingStep(OnboardingStep.STEP_2);
+      navigation.navigate(Routes.REWARDS_ONBOARDING_2);
+    }
   };
 
   const handleSkip = () => {

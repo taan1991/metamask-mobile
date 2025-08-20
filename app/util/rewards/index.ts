@@ -25,6 +25,8 @@ export const formatSeasonEndDate = (date: string | undefined): string => {
   }
 };
 
+export const REWARDS_ONBOARDING_COMPLETED_KEY = 'REWARDS_ONBOARDING_COMPLETED';
+
 export const SOLANA_SIGNUP_NOT_SUPPORTED =
   'Signing in to Rewards with Solana accounts is not supported yet. Please use an Ethereum account instead.';
 
