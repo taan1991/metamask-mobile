@@ -66,6 +66,10 @@ const Routes = {
   REWARDS_VIEW: 'RewardsView',
   REWARDS_TERMS: 'RewardsTerms',
   REWARDS_DASHBOARD: 'RewardsDashboard',
+  REWARDS_ONBOARDING_1: 'RewardsOnboarding1',
+  REWARDS_ONBOARDING_2: 'RewardsOnboarding2',
+  REWARDS_ONBOARDING_3: 'RewardsOnboarding3',
+  REWARDS_ONBOARDING_4: 'RewardsOnboarding4',
   MODAL: {
     DELETE_WALLET: 'DeleteWalletModal',
     ROOT_MODAL_FLOW: 'RootModalFlow',

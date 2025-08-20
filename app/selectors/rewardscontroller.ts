@@ -36,12 +36,12 @@ export const selectDevOnlyLoginAddress = createSelector(
 );
 
 /**
- * Selector to get the last updated timestamp from RewardsController state
+ * Selector to get the onboarding state from RewardsController
  */
-export const selectRewardsLastUpdated = createSelector(
+export const selectOnboardingState = createSelector(
   selectRewardsControllerStateWithFeatureFlag,
   (rewardsControllerState: RewardsControllerState | null) =>
-    rewardsControllerState?.lastUpdated || null,
+    rewardsControllerState?.onboarding || null,
 );
 
 /**

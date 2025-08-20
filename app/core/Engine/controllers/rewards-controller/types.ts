@@ -169,6 +169,25 @@ export enum RewardClaimStatus {
 }
 
 /**
+ * Onboarding step for onboarding flow
+ */
+export enum OnboardingStep {
+  STEP_1 = 'step_1',
+  STEP_2 = 'step_2',
+  STEP_3 = 'step_3',
+  STEP_4 = 'step_4',
+}
+
+/**
+ * Onboarding state for tracking onboarding progress
+ */
+export interface OnboardingState {
+  currentStep: string;
+  hasSeenOnboarding: boolean;
+  [key: string]: string | boolean;
+}
+
+/**
  * State for the RewardsController
  */
 export interface AuthState {
@@ -178,13 +197,12 @@ export interface AuthState {
   [key: string]: string | string[] | number | null | Record<string, string>;
 }
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-export type RewardsControllerState = {
+export interface RewardsControllerState {
   devOnlyLoginAddress: string | null;
-  // UI state
-  lastUpdated: number | null;
   auth: AuthState;
-};
+  onboarding: OnboardingState;
+  [key: string]: string | null | AuthState | OnboardingState;
+}
 
 /**
  * Events that can be emitted by the RewardsController

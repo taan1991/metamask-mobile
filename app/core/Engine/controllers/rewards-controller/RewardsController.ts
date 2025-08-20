@@ -1,8 +1,10 @@
 import { BaseController } from '@metamask/base-controller';
-import type {
-  RewardsControllerState,
-  AuthState,
-  LoginResponseDto,
+import {
+  type RewardsControllerState,
+  type AuthState,
+  type LoginResponseDto,
+  type OnboardingState,
+  OnboardingStep,
 } from './types';
 import type { RewardsControllerMessenger } from '../../messengers/rewards-controller-messenger';
 import {
@@ -32,8 +34,11 @@ const GRACE_PERIOD_MS = 1000 * 60 * 10; // 10 minutes
  */
 const metadata = {
   devOnlyLoginAddress: { persist: true, anonymous: false },
-  lastUpdated: { persist: true, anonymous: false },
   auth: {
+    persist: true,
+    anonymous: false,
+  },
+  onboarding: {
     persist: true,
     anonymous: false,
   },
@@ -49,12 +54,20 @@ const getDefaultAuthState = (): AuthState => ({
 });
 
 /**
+ * Get the default onboarding state
+ */
+const getDefaultOnboardingState = (): OnboardingState => ({
+  currentStep: OnboardingStep.STEP_1,
+  hasSeenOnboarding: false,
+});
+
+/**
  * Get the default state for the RewardsController
  */
 export const getRewardsControllerDefaultState = (): RewardsControllerState => ({
   devOnlyLoginAddress: null,
-  lastUpdated: null,
   auth: getDefaultAuthState(),
+  onboarding: getDefaultOnboardingState(),
 });
 
 export const defaultRewardsControllerState = getRewardsControllerDefaultState();
@@ -85,7 +98,7 @@ export class RewardsController extends BaseController<
       state: {
         ...defaultRewardsControllerState,
         ...state,
-      },
+      } as RewardsControllerState,
     });
 
     this.#initializeEventSubscriptions();
@@ -123,15 +136,6 @@ export class RewardsController extends BaseController<
    */
   resetState(): void {
     this.update(() => getRewardsControllerDefaultState());
-  }
-
-  /**
-   * Update last updated timestamp
-   */
-  updateLastUpdated(): void {
-    this.update((state) => {
-      state.lastUpdated = Date.now();
-    });
   }
 
   /**
@@ -237,7 +241,7 @@ export class RewardsController extends BaseController<
     // Skip if this account already has a valid subscription
     const subscriptionId = auth.accountToSubscription[address.toLowerCase()];
     if (subscriptionId && timeSinceLastAuth < GRACE_PERIOD_MS) {
-      return true; // Account belongs to a known subscription, skip auth
+      return true;
     }
 
     return false;
@@ -434,5 +438,39 @@ export class RewardsController extends BaseController<
     return () => {
       this.#accountOptInCallbacks.delete(callback);
     };
+  }
+
+  /**
+   * Get the current onboarding state
+   */
+  getOnboardingState(): OnboardingState {
+    return this.state.onboarding;
+  }
+
+  /**
+   * Update the current onboarding step
+   */
+  setOnboardingStep(step: OnboardingStep): void {
+    this.update((state) => {
+      state.onboarding.currentStep = step;
+    });
+  }
+
+  /**
+   * Mark onboarding as seen
+   */
+  markOnboardingAsSeen(): void {
+    this.update((state) => {
+      state.onboarding.hasSeenOnboarding = true;
+    });
+  }
+
+  /**
+   * Reset onboarding state
+   */
+  resetOnboardingState(): void {
+    this.update((state) => {
+      state.onboarding = getDefaultOnboardingState();
+    });
   }
 }
