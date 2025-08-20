@@ -7,7 +7,7 @@ import Assertions from '../../framework/Assertions';
 import TabBarComponent from '../../pages/wallet/TabBarComponent';
 import WalletActionsBottomSheet from '../../pages/wallet/WalletActionsBottomSheet';
 import { swapSpecificMock } from './helpers/constants';
-import { getMockServerPort } from '../../fixtures/utils.js';
+import { getMockServerPort } from '../../framework/fixtures/FixtureUtils';
 import { SmokeTrade } from '../../tags.js';
 import ActivitiesView from '../../pages/Transactions/ActivitiesView';
 import { ActivitiesViewSelectorsText } from '../../selectors/Transactions/ActivitiesView.selectors';

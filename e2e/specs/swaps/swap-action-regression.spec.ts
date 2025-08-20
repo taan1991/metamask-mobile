@@ -1,7 +1,6 @@
 import { loginToApp } from '../../viewHelper';
 import TabBarComponent from '../../pages/wallet/TabBarComponent';
 import ActivitiesView from '../../pages/Transactions/ActivitiesView';
-import WalletActionsBottomSheet from '../../pages/wallet/WalletActionsBottomSheet';
 import FixtureBuilder from '../../framework/fixtures/FixtureBuilder';
 import {
   loadFixture,
@@ -24,6 +23,7 @@ import { swapSpecificMock } from './helpers/constants';
 import { stopMockServer } from '../../api-mocking/mock-server.js';
 import { startMockServer } from './helpers/swap-mocks';
 import { prepareSwapsTestEnvironment } from './helpers/prepareSwapsTestEnvironment';
+import WalletView from '../../pages/wallet/WalletView';
 
 const fixtureServer = new FixtureServer();
 
@@ -78,11 +78,9 @@ describe(Regression('Multiple Swaps from Actions'), () => {
   `(
     "should swap $type token '$sourceTokenSymbol' to '$destTokenSymbol' on chainID='$chainId",
     async ({ type, quantity, sourceTokenSymbol, destTokenSymbol, chainId }) => {
-      await TabBarComponent.tapActions();
-      await Assertions.expectElementToBeVisible(
-        WalletActionsBottomSheet.swapButton,
-      );
-      await WalletActionsBottomSheet.tapSwapButton();
+      await device.disableSynchronization();
+      await TabBarComponent.tapWallet();
+      await WalletView.tapWalletSwapButton();
 
       // Submit the Swap
       await submitSwapUnifiedUI(
@@ -114,6 +112,8 @@ describe(Regression('Multiple Swaps from Actions'), () => {
           { timeout: 60000 },
         );
       }
+      // Waiting toast to clear
+      await TestHelpers.delay(10000);
     },
   );
 });
