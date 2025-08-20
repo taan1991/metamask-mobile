@@ -87,7 +87,6 @@ const Onboarding4: React.FC = () => {
   };
 
   const handleSkip = () => {
-    Engine.context.RewardsController.resetOnboardingState();
     navigation.reset({
       index: 0,
       routes: [{ name: Routes.WALLET.HOME }],

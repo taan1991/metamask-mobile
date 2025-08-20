@@ -70,7 +70,6 @@ const Onboarding1: React.FC = () => {
   };
 
   const handleSkip = () => {
-    Engine.context.RewardsController.resetOnboardingState();
     navigation.goBack();
   };
 
