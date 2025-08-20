@@ -588,12 +588,11 @@ const HomeTabs = () => {
     const currentRoute = state.routes[state.index];
     const isOnboardingActive = onboardingState?.isOnboardingActive;
     const isOnboardingScreen =
-      (currentRoute.name === Routes.REWARDS_HOME &&
-        (isOnboardingActive ||
-          currentRoute.state?.routes?.some(
-            (route) => route.name === Routes.REWARDS_ONBOARDING_FLOW,
-          ))) ||
-      currentRoute.name === Routes.REWARDS_ONBOARDING_FLOW;
+      currentRoute.name === Routes.REWARDS_HOME &&
+      (isOnboardingActive ||
+        currentRoute.state?.routes?.some(
+          (route) => route.name === Routes.REWARDS_ONBOARDING_FLOW,
+        ));
 
     // Hide TabBar for onboarding screens
     if (isKeyboardHidden && !isOnboardingScreen) {
