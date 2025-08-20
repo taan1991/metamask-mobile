@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import RewardsHero from './RewardsHero';
 import { getNavigationOptionsTitle } from '../../UI/Navbar';
 import { strings } from '../../../../locales/i18n';
+import Engine from '../../../core/Engine';
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
@@ -41,6 +42,10 @@ const RewardsView: React.FC = () => {
       ),
     );
   }, [colors, navigation]);
+
+  useEffect(() => {
+    Engine.context.RewardsController.resetOnboardingState();
+  }, []);
 
   return (
     <SafeAreaView style={styles.wrapper}>

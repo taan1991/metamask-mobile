@@ -1,21 +1,23 @@
 import React from 'react';
-import { View, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../../../util/theme';
-import { fontStyles } from '../../../../styles/common';
 import Engine from '../../../../core/Engine';
 import { OnboardingStep } from '../../../../core/Engine/controllers/rewards-controller/types';
 import Routes from '../../../../constants/navigation/Routes';
 import Text, {
   TextVariant,
 } from '../../../../component-library/components/Texts/Text';
-
-interface Colors {
-  background: { default: string; alternative: string };
-  text: { default: string; alternative: string };
-  border: { muted: string };
-  primary: { default: string; inverse: string };
-}
+import Button, {
+  ButtonSize,
+  ButtonVariants,
+} from '../../../../component-library/components/Buttons/Button';
+import {
+  ButtonIcon,
+  ButtonIconSize,
+  IconName,
+} from '@metamask/design-system-react-native';
+import { Colors } from '../../../../util/theme/models';
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
@@ -23,10 +25,16 @@ const createStyles = (colors: Colors) =>
       flex: 1,
       backgroundColor: colors.background.default,
     },
+    closeIcon: {
+      position: 'absolute',
+      top: 16,
+      left: 16,
+      zIndex: 1,
+    },
     content: {
       flex: 1,
       paddingHorizontal: 24,
-      paddingTop: 40,
+      marginTop: 80,
     },
     header: {
       alignItems: 'center',
@@ -38,83 +46,15 @@ const createStyles = (colors: Colors) =>
       marginBottom: 12,
     },
     subtitle: {
-      ...fontStyles.normal,
-      fontSize: 16,
-      color: colors.text.alternative,
       textAlign: 'center',
-      lineHeight: 24,
-    },
-    illustration: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginVertical: 40,
-    },
-    placeholderIllustration: {
-      width: 200,
-      height: 200,
-      backgroundColor: colors.background.alternative,
-      borderRadius: 100,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    placeholderText: {
-      fontSize: 80,
-    },
-    description: {
-      paddingHorizontal: 20,
-      marginBottom: 40,
-    },
-    descriptionText: {
-      ...fontStyles.normal,
-      fontSize: 16,
-      color: colors.text.default,
-      textAlign: 'center',
-      lineHeight: 24,
     },
     footer: {
       paddingHorizontal: 24,
       paddingBottom: 40,
+      width: '100%',
     },
-    pagination: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      marginBottom: 32,
-    },
-    dot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.border.muted,
-      marginHorizontal: 4,
-    },
-    activeDot: {
-      backgroundColor: colors.primary.default,
-    },
-    buttons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    skipButton: {
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-    },
-    skipButtonText: {
-      ...fontStyles.normal,
-      fontSize: 16,
-      color: colors.text.alternative,
-    },
-    nextButton: {
-      backgroundColor: colors.primary.default,
-      paddingVertical: 12,
-      paddingHorizontal: 32,
-      borderRadius: 24,
-    },
-    nextButtonText: {
-      ...fontStyles.bold,
-      fontSize: 16,
-      color: colors.primary.inverse,
+    button: {
+      width: '100%',
     },
   });
 
@@ -130,54 +70,38 @@ const Onboarding1: React.FC = () => {
   };
 
   const handleSkip = () => {
-    // Mark onboarding as seen and navigate to main rewards view
-    Engine.context.RewardsController.markOnboardingAsSeen();
-    navigation.navigate(Routes.REWARDS_VIEW);
+    Engine.context.RewardsController.resetOnboardingState();
+    navigation.goBack();
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <ButtonIcon
+        size={ButtonIconSize.Lg}
+        iconName={IconName.Close}
+        onPress={handleSkip}
+        style={styles.closeIcon}
+      />
       <View style={styles.content}>
         <View style={styles.header}>
           <Text variant={TextVariant.DisplayLG} style={styles.title}>
             Season 1 is Live
           </Text>
-          <Text style={styles.subtitle}>
-            Discover amazing rewards and benefits waiting for you
-          </Text>
-        </View>
-
-        <View style={styles.illustration}>
-          {/* Placeholder for illustration */}
-          <View style={styles.placeholderIllustration}>
-            <Text style={styles.placeholderText}>🎁</Text>
-          </View>
-        </View>
-
-        <View style={styles.description}>
-          <Text style={styles.descriptionText}>
-            Earn points for your activities and unlock exclusive rewards. Start
-            your journey today!
+          <Text variant={TextVariant.BodyMD} style={styles.subtitle}>
+            Earn bonus points and perks based on your MetaMask activity, unlock
+            rewards, and advance through the levels
           </Text>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <View style={styles.pagination}>
-          <View style={[styles.dot, styles.activeDot]} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-        </View>
-
-        <View style={styles.buttons}>
-          <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-            <Text style={styles.skipButtonText}>Skip</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
-        </View>
+        <Button
+          variant={ButtonVariants.Primary}
+          size={ButtonSize.Lg}
+          label="Claim 250 points now"
+          onPress={handleNext}
+          style={styles.button}
+        />
       </View>
     </SafeAreaView>
   );

@@ -105,6 +105,7 @@ import {
   selectPerpsEnabledFlag,
 } from '../../UI/Perps';
 import { selectRewardsEnabledFlag } from '../../../selectors/featureFlagController/rewards';
+import { selectOnboardingState } from '../../../selectors/rewardscontroller';
 import PerpsPositionTransactionView from '../../UI/Perps/Views/PerpsTransactionsView/PerpsPositionTransactionView';
 import PerpsOrderTransactionView from '../../UI/Perps/Views/PerpsTransactionsView/PerpsOrderTransactionView';
 import PerpsFundingTransactionView from '../../UI/Perps/Views/PerpsTransactionsView/PerpsFundingTransactionView';
@@ -484,6 +485,7 @@ const HomeTabs = () => {
 
   const accountsLength = useSelector(selectAccountsLength);
   const isRewardsEnabled = useSelector(selectRewardsEnabledFlag);
+  const onboardingState = useSelector(selectOnboardingState);
 
   const chainId = useSelector((state) => {
     const providerConfig = selectProviderConfig(state);
@@ -583,7 +585,14 @@ const HomeTabs = () => {
   }, []);
 
   const renderTabBar = ({ state, descriptors, navigation }) => {
-    if (isKeyboardHidden) {
+    const currentRoute = state.routes[state.index];
+    let isOnboardingScreen = false;
+    if (currentRoute.name === Routes.REWARDS_VIEW && onboardingState) {
+      isOnboardingScreen = !onboardingState.hasSeenOnboarding;
+    }
+
+    // Hide TabBar for onboarding screens
+    if (isKeyboardHidden && !isOnboardingScreen) {
       return (
         <TabBar
           state={state}
