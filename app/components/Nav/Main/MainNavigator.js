@@ -539,7 +539,7 @@ const HomeTabs = () => {
           createEventBuilder(MetaMetricsEvents.NAVIGATION_TAPS_REWARDS).build(),
         );
       },
-      rootScreenName: Routes.REWARDS_VIEW,
+      rootScreenName: Routes.REWARDS_HOME,
     },
     activity: {
       tabBarIconKey: TabBarIconKey.Activity,
@@ -586,10 +586,14 @@ const HomeTabs = () => {
 
   const renderTabBar = ({ state, descriptors, navigation }) => {
     const currentRoute = state.routes[state.index];
-    let isOnboardingScreen = false;
-    if (currentRoute.name === Routes.REWARDS_VIEW && onboardingState) {
-      isOnboardingScreen = !onboardingState.hasSeenOnboarding;
-    }
+    const isOnboardingActive = onboardingState?.isOnboardingActive;
+    const isOnboardingScreen =
+      (currentRoute.name === Routes.REWARDS_HOME &&
+        (isOnboardingActive ||
+          currentRoute.state?.routes?.some(
+            (route) => route.name === Routes.REWARDS_ONBOARDING_FLOW,
+          ))) ||
+      currentRoute.name === Routes.REWARDS_ONBOARDING_FLOW;
 
     // Hide TabBar for onboarding screens
     if (isKeyboardHidden && !isOnboardingScreen) {
@@ -630,7 +634,7 @@ const HomeTabs = () => {
       />
       {isRewardsEnabled ? (
         <Tab.Screen
-          name={Routes.REWARDS_VIEW}
+          name={Routes.REWARDS_HOME}
           options={options.rewards}
           component={RewardsHome}
           layout={({ children }) => <UnmountOnBlur>{children}</UnmountOnBlur>}

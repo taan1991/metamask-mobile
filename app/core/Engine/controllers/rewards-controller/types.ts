@@ -176,6 +176,7 @@ export enum OnboardingStep {
   STEP_2 = 'step_2',
   STEP_3 = 'step_3',
   STEP_4 = 'step_4',
+  STEP_5 = 'step_5',
 }
 
 /**
@@ -183,7 +184,7 @@ export enum OnboardingStep {
  */
 export interface OnboardingState {
   currentStep: string;
-  hasSeenOnboarding: boolean;
+  isOnboardingActive: boolean;
   [key: string]: string | boolean;
 }
 

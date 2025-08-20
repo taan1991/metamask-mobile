@@ -105,6 +105,7 @@ const Onboarding3: React.FC = () => {
         <View style={styles.dot} />
         <View style={styles.activeBar} />
         <View style={styles.dot} />
+        <View style={styles.dot} />
       </View>
       <View style={styles.content}>
         <Text variant={TextVariant.HeadingLG} style={styles.title}>

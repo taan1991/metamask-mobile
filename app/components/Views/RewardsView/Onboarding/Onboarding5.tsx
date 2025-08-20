@@ -15,9 +15,9 @@ import Text, {
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../../../util/theme';
 import Engine from '../../../../core/Engine';
-import { OnboardingStep } from '../../../../core/Engine/controllers/rewards-controller/types';
 import Routes from '../../../../constants/navigation/Routes';
 import { Colors } from '../../../../util/theme/models';
+import { useRewards } from '../../../../core/Engine/controllers/rewards-controller/RewardsAuthProvider';
 
 const createStyles = (colors: Colors) =>
   StyleSheet.create({
@@ -31,12 +31,7 @@ const createStyles = (colors: Colors) =>
       left: 16,
       zIndex: 1,
     },
-    topPagination: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginTop: 32,
-    },
+
     content: {
       flex: 1,
       paddingHorizontal: 24,
@@ -58,32 +53,13 @@ const createStyles = (colors: Colors) =>
     buttons: {
       width: '100%',
     },
-    dot: {
-      width: 9,
-      height: 9,
-      borderRadius: 6,
-      backgroundColor: colors.text.alternative,
-      marginHorizontal: 4,
-    },
-    activeBar: {
-      width: 28,
-      height: 9,
-      borderRadius: 6,
-      backgroundColor: colors.text.default,
-      marginHorizontal: 4,
-    },
   });
 
-const Onboarding2: React.FC = () => {
+const Onboarding5: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const styles = createStyles(colors);
-
-  const handleNext = () => {
-    // Update controller state to step 3
-    Engine.context.RewardsController.setOnboardingStep(OnboardingStep.STEP_3);
-    navigation.navigate(Routes.REWARDS_ONBOARDING_3);
-  };
+  const { optin } = useRewards();
 
   const handleSkip = () => {
     Engine.context.RewardsController.resetOnboardingState();
@@ -101,19 +77,14 @@ const Onboarding2: React.FC = () => {
         onPress={handleSkip}
         style={styles.backIcon}
       />
-      <View style={styles.topPagination}>
-        <View style={styles.activeBar} />
-        <View style={styles.dot} />
-        <View style={styles.dot} />
-        <View style={styles.dot} />
-      </View>
+
       <View style={styles.content}>
         <Text variant={TextVariant.HeadingLG} style={styles.title}>
-          Earn Points on Every Trade
+          Ready to Start Earning?
         </Text>
         <Text variant={TextVariant.BodyMD} style={styles.subtitle}>
-          Turn your onchain activity into rewards. Every swap and perps trade in
-          MetaMask earns you points.
+          You&apos;re all set! Start trading, swapping, and using MetaMask to
+          earn points and unlock exclusive rewards. Your journey begins now.
         </Text>
       </View>
 
@@ -121,8 +92,8 @@ const Onboarding2: React.FC = () => {
         <Button
           variant={ButtonVariants.Primary}
           size={ButtonSize.Lg}
-          label="Continue"
-          onPress={handleNext}
+          label="Get Started"
+          onPress={optin}
           style={styles.buttons}
         />
         <Button
@@ -137,4 +108,4 @@ const Onboarding2: React.FC = () => {
   );
 };
 
-export default Onboarding2;
+export default Onboarding5;

@@ -98,9 +98,9 @@ const TabBar = ({ state, descriptors, navigation }: TabBarProps) => {
           case Routes.TRANSACTIONS_VIEW:
             navigation.navigate(Routes.TRANSACTIONS_VIEW);
             break;
-          case Routes.REWARDS_VIEW:
+          case Routes.REWARDS_HOME:
             if (isRewardsEnabled) {
-              navigation.navigate(Routes.REWARDS_VIEW);
+              navigation.navigate(Routes.REWARDS_HOME);
             }
             break;
           case Routes.SETTINGS_VIEW:

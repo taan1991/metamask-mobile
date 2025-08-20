@@ -19,6 +19,7 @@ export const LABEL_BY_TAB_BAR_ICON_KEY = {
   [TabBarIconKey.Browser]: 'bottom_nav.browser',
   [TabBarIconKey.Actions]: '',
   [TabBarIconKey.Activity]: 'bottom_nav.activity',
+  [TabBarIconKey.Rewards]: 'bottom_nav.rewards',
   [TabBarIconKey.Setting]: 'bottom_nav.settings',
 } as const;
 

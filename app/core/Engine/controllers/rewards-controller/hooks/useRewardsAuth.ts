@@ -48,6 +48,8 @@ export const useRewardsAuth = () => {
         const tokenResult = await getSubscriptionToken(currentSubscriptionId);
         Logger.log('RewardsController: tokenResult', tokenResult);
         setIsAuthenticated(tokenResult.success && !!tokenResult.token);
+        // Mark onboarding inactive
+        rewardsController.markOnboardingInactive();
       } else {
         setIsAuthenticated(false);
       }

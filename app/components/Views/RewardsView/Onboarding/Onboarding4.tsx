@@ -81,8 +81,9 @@ const Onboarding4: React.FC = () => {
 
   const handleNext = () => {
     // Update controller state to step 4
-    Engine.context.RewardsController.setOnboardingStep(OnboardingStep.STEP_4);
-    navigation.navigate(Routes.REWARDS_ONBOARDING_4);
+    Engine.context.RewardsController.setOnboardingStep(OnboardingStep.STEP_5);
+
+    navigation.navigate(Routes.REWARDS_ONBOARDING_5);
   };
 
   const handleSkip = () => {
@@ -102,6 +103,7 @@ const Onboarding4: React.FC = () => {
         style={styles.backIcon}
       />
       <View style={styles.topPagination}>
+        <View style={styles.dot} />
         <View style={styles.dot} />
         <View style={styles.dot} />
         <View style={styles.activeBar} />
