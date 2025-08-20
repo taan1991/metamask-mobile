@@ -84,6 +84,21 @@ MAINTENANCE:
     <div id="container"></div>
 
     <script>
+        // Immediate debug log to test if script executes
+        console.log('📱 WebView HTML script executing...');
+        
+        // Test communication immediately
+        if (window.ReactNativeWebView) {
+            console.log('✅ ReactNativeWebView available in HTML');
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'WEBVIEW_TEST',
+                message: 'HTML script executed successfully',
+                timestamp: new Date().toISOString()
+            }));
+        } else {
+            console.error('❌ ReactNativeWebView NOT available in HTML');
+        }
+        
         // Global variables
         window.chart = null;
         window.candlestickSeries = null;
@@ -92,15 +107,30 @@ MAINTENANCE:
         
         // Step 1: Load TradingView library dynamically
         function loadTradingView() {
+            console.log('📚 Starting TradingView library load...');
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js';
             
             script.onload = function() {
-                setTimeout(createChart, 500); // Small delay to ensure library is ready
+                console.log('✅ TradingView library loaded successfully');
+                console.log('🔍 LightweightCharts available:', !!window.LightweightCharts);
+                setTimeout(() => {
+                    console.log('⏰ Creating chart after 500ms delay...');
+                    createChart();
+                }, 500); // Small delay to ensure library is ready
             };
             
-            script.onerror = function() {
-                console.error('TradingView: Failed to load library');
+            script.onerror = function(error) {
+                console.error('❌ Failed to load TradingView library:', error);
+                // Send error back to React Native
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                        type: 'WEBVIEW_ERROR',
+                        error: 'Failed to load TradingView library',
+                        details: error.toString(),
+                        timestamp: new Date().toISOString()
+                    }));
+                }
             };
             
             document.head.appendChild(script);
@@ -108,14 +138,34 @@ MAINTENANCE:
         
         // Step 2: Create chart
         function createChart() {
+            console.log('🎨 Creating chart...');
+            
             if (!window.LightweightCharts) {
-                console.error('TradingView: Library not available');
+                console.error('❌ TradingView: Library not available');
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                        type: 'WEBVIEW_ERROR',
+                        error: 'LightweightCharts library not available',
+                        timestamp: new Date().toISOString()
+                    }));
+                }
                 return;
             }
             
+            console.log('✅ LightweightCharts library is available');
+            
+            const container = document.getElementById('container');
+            if (!container) {
+                console.error('❌ Chart container not found');
+                return;
+            }
+            
+            console.log('✅ Chart container found');
+            
             try {
+                console.log('🏗️ Creating chart instance...');
                 // Create chart with theme applied via template literals
-                window.chart = LightweightCharts.createChart(document.getElementById('container'), {
+                window.chart = LightweightCharts.createChart(container, {
                     width: window.innerWidth,
                     height: window.innerHeight,
                     layout: {
@@ -151,15 +201,35 @@ MAINTENANCE:
                     }
                 });
                 
+                console.log('✅ Chart instance created successfully');
+                console.log('🔍 Chart object exists:', !!window.chart);
+                
                 // Notify React Native that chart is ready
                 if (window.ReactNativeWebView) {
+                    console.log('📤 Sending CHART_READY message...');
                     window.ReactNativeWebView.postMessage(JSON.stringify({
                         type: 'CHART_READY',
                         timestamp: new Date().toISOString()
                     }));
-                } 
+                    console.log('✅ CHART_READY message sent');
+                } else {
+                    console.error('❌ ReactNativeWebView not available for CHART_READY');
+                }
             } catch (error) {
-                console.error('TradingView: Error creating chart:', error);
+                console.error('❌ TradingView: Error creating chart:', error);
+                console.error('Error details:', error.message);
+                console.error('Error stack:', error.stack);
+                
+                // Send error back to React Native
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                        type: 'WEBVIEW_ERROR',
+                        error: 'Chart creation failed',
+                        details: error.message,
+                        stack: error.stack,
+                        timestamp: new Date().toISOString()
+                    }));
+                }
             }
         }
         
@@ -396,7 +466,11 @@ MAINTENANCE:
         });
         
         // Start loading after a small delay
-        setTimeout(loadTradingView, 500);
+        console.log('⏰ Scheduling TradingView load in 500ms...');
+        setTimeout(() => {
+            console.log('🚀 Timeout fired - calling loadTradingView...');
+            loadTradingView();
+        }, 500);
     </script>
 </body>
 </html>

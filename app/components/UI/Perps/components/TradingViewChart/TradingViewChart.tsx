@@ -46,11 +46,29 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   const webViewRef = useRef<WebView>(null);
   const [isChartReady, setIsChartReady] = useState(false);
   const [webViewError, setWebViewError] = useState<string | null>(null);
+  const [webViewLoaded, setWebViewLoaded] = useState(false);
+  const chartTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const htmlContent = useMemo(
-    () => createTradingViewChartTemplate(theme),
-    [theme],
-  );
+  const htmlContent = useMemo(() => {
+    const template = createTradingViewChartTemplate(theme);
+    console.log('📄 HTML template created, length:', template.length);
+    return template;
+  }, [theme]);
+
+  // Debug component mounting
+  useEffect(() => {
+    console.log('🏗️ TradingViewChart component mounted');
+    console.log('📋 Initial state:', {
+      isChartReady,
+      webViewLoaded,
+      hasTheme: !!theme,
+    });
+  }, []);
+
+  // Force log to track WebView state changes
+  useEffect(() => {
+    console.log('🔄 WebView state changed:', { webViewLoaded, isChartReady });
+  }, [webViewLoaded, isChartReady]);
 
   // Send message to WebView - simplified to avoid loops
   const sendMessage = useCallback(
@@ -65,27 +83,51 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   // Handle messages from WebView
   const handleWebViewMessage = useCallback(
     (event: WebViewMessageEvent) => {
+      console.log('📨 RAW MESSAGE RECEIVED from WebView!');
+      console.log('📨 Message data:', event.nativeEvent.data);
+
       try {
         const message = JSON.parse(event.nativeEvent.data);
+        console.log('📨 Parsed message:', message);
 
         switch (message.type) {
           case 'CHART_READY':
+            console.log(
+              '✅ CHART_READY received - chart initialized successfully!',
+            );
             setIsChartReady(true);
+
+            // Clear timeout since chart is ready
+            if (chartTimeoutRef.current) {
+              clearTimeout(chartTimeoutRef.current);
+              console.log('⏰ Chart timeout cleared');
+            }
+
             onChartReady?.();
+            break;
+          case 'WEBVIEW_TEST':
+            console.log('🧪 WebView communication test successful:', message);
+            break;
+          case 'WEBVIEW_ERROR':
+            console.error('💥 WebView JavaScript error:', message.error);
+            if (message.details)
+              console.error('Error details:', message.details);
+            if (message.stack) console.error('Error stack:', message.stack);
             break;
           case 'PRICE_LINES_UPDATE':
             break;
           case 'INTERVAL_UPDATED':
             break;
-          case 'WEBVIEW_TEST':
-            break;
           default:
+            console.log('🤷 Unknown message type:', message.type, message);
             break;
         }
       } catch (error) {
         console.error(
-          'TradingViewChart: Error parsing WebView message:',
+          '❌ Error parsing WebView message:',
           error,
+          'Raw data:',
+          event.nativeEvent.data,
         );
       }
     },
@@ -152,9 +194,68 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
     };
   }, [candleData]);
 
+  // WebView load handlers
+  const handleWebViewLoad = useCallback(() => {
+    console.log('✅ WebView onLoad event fired!');
+    console.log('🔄 Setting webViewLoaded to true');
+    setWebViewLoaded(true);
+
+    // Start a timeout to detect if chart never becomes ready
+    if (chartTimeoutRef.current) {
+      clearTimeout(chartTimeoutRef.current);
+    }
+
+    chartTimeoutRef.current = setTimeout(() => {
+      if (!isChartReady) {
+        console.error(
+          '⏰ Chart initialization timeout - chart never became ready after 10 seconds',
+        );
+        console.log('🔍 Debugging info:', {
+          webViewLoaded: true,
+          isChartReady: false,
+          hasWebViewRef: !!webViewRef.current,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }, 10000); // 10 second timeout
+  }, [isChartReady]);
+
+  const handleWebViewLoadStart = useCallback(() => {
+    console.log('🚀 WebView onLoadStart event fired!');
+    console.log('🔄 Setting webViewLoaded to false');
+    setWebViewLoaded(false);
+    setIsChartReady(false);
+  }, []);
+
+  const handleWebViewLoadEnd = useCallback(() => {
+    console.log('🏁 WebView onLoadEnd event fired!');
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (chartTimeoutRef.current) {
+        clearTimeout(chartTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Send real candle data to chart
   useEffect(() => {
-    if (!isChartReady || !webViewRef.current) return;
+    console.log('📊 Data send effect:', {
+      isChartReady,
+      hasWebView: !!webViewRef.current,
+      hasCandleData: !!candleData?.candles?.length,
+      webViewLoaded,
+    });
+
+    if (!isChartReady || !webViewRef.current) {
+      console.log('⚠️ Not ready to send data:', {
+        isChartReady,
+        hasWebView: !!webViewRef.current,
+      });
+      return;
+    }
 
     let dataToSend = null;
     let dataSource = 'none';
@@ -173,7 +274,13 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
       };
       webViewRef.current.postMessage(JSON.stringify(message));
     }
-  }, [isChartReady, candleDataVersion, formatCandleData, candleData]);
+  }, [
+    isChartReady,
+    candleDataVersion,
+    formatCandleData,
+    candleData,
+    webViewLoaded,
+  ]);
 
   // Update auxiliary lines when they change
   useEffect(() => {
@@ -188,10 +295,12 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   // Handle WebView errors
   const handleWebViewError = useCallback(
     (event: { nativeEvent?: { description?: string } }) => {
+      console.error('❌ WebView load error:', event.nativeEvent);
       const errorDescription =
         event.nativeEvent?.description || 'WebView error occurred';
       setWebViewError(errorDescription);
-      console.error('WebView error:', event.nativeEvent);
+      setWebViewLoaded(false);
+      setIsChartReady(false);
     },
     [],
   );
@@ -208,6 +317,13 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
     );
   }
 
+  // Debug rendering
+  console.log('🖼️ Rendering TradingViewChart:', {
+    hasError: !!webViewError,
+    height,
+    htmlLength: htmlContent.length,
+  });
+
   return (
     <Box
       twClassName="bg-default rounded-lg"
@@ -220,25 +336,278 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
       >
         <WebView
           ref={webViewRef}
-          source={{ html: htmlContent }}
+          source={{
+            html: `
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <style>
+                    body { margin: 0; padding: 0; background: ${theme.colors.background.default}; color: ${theme.colors.text.default}; font-family: Arial; }
+                    #container { width: 100%; height: 100vh; }
+                    #status { position: absolute; top: 10px; left: 10px; z-index: 1000; font-size: 12px; color: ${theme.colors.text.muted}; }
+                  </style>
+                </head>
+                <body>
+                  <div id="container"></div>
+                  <p id="status">Loading TradingView chart...</p>
+                  
+                  <script>
+                    console.log('📊 TradingView Chart HTML Script Starting...');
+                    
+                    // Global variables
+                    window.chart = null;
+                    window.candlestickSeries = null;
+                    
+                    // Helper function to send messages to React Native
+                    function sendMessage(message) {
+                      if (window.ReactNativeWebView) {
+                        console.log('📤 Sending message:', message.type);
+                        window.ReactNativeWebView.postMessage(JSON.stringify(message));
+                      }
+                    }
+                    
+                    // Update status on screen
+                    function updateStatus(text) {
+                      const statusEl = document.getElementById('status');
+                      if (statusEl) {
+                        statusEl.textContent = text;
+                      }
+                      console.log('📊 Status:', text);
+                    }
+                    
+                    // Load TradingView library
+                    function loadTradingView() {
+                      updateStatus('Loading TradingView library...');
+                      
+                      const script = document.createElement('script');
+                      script.src = 'https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js';
+                      
+                      script.onload = function() {
+                        console.log('✅ TradingView library loaded');
+                        updateStatus('TradingView library loaded - creating chart...');
+                        setTimeout(createChart, 500);
+                      };
+                      
+                      script.onerror = function(error) {
+                        console.error('❌ Failed to load TradingView library');
+                        updateStatus('Failed to load TradingView library');
+                        sendMessage({
+                          type: 'WEBVIEW_ERROR',
+                          error: 'Failed to load TradingView library',
+                          timestamp: new Date().toISOString()
+                        });
+                      };
+                      
+                      document.head.appendChild(script);
+                    }
+                    
+                    // Create the chart
+                    function createChart() {
+                      try {
+                        const container = document.getElementById('container');
+                        if (!container) {
+                          throw new Error('Container not found');
+                        }
+                        
+                        if (!window.LightweightCharts) {
+                          throw new Error('LightweightCharts not available');
+                        }
+                        
+                        updateStatus('Creating chart instance...');
+                        
+                        // Create chart with proper theme colors
+                        window.chart = window.LightweightCharts.createChart(container, {
+                          width: window.innerWidth,
+                          height: window.innerHeight,
+                          layout: {
+                            background: {
+                              color: '${theme.colors.background.default}',
+                            },
+                            textColor: '${theme.colors.text.muted}',
+                            attributionLogo: false, // Hide the TradingView logo
+                          },
+                          localization: {
+                            priceFormatter: (price) => {
+                              // Format price with comma separators
+                              return new Intl.NumberFormat('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              }).format(price);
+                            }
+                          },
+                          grid: {
+                            vertLines: { color: '${theme.colors.border.muted}' },
+                            horzLines: { color: '${theme.colors.border.muted}' },
+                          },
+                          timeScale: {
+                            timeVisible: true,
+                            secondsVisible: false,
+                            borderColor: 'transparent',
+                          },
+                          rightPriceScale: {
+                            borderColor: 'transparent',
+                          },
+                          leftPriceScale: {
+                            borderColor: 'transparent',
+                          },
+                        });
+                        
+                        console.log('✅ Chart created successfully');
+                        updateStatus('Chart created successfully!');
+                        
+                        // Send CHART_READY message to React Native
+                        sendMessage({
+                          type: 'CHART_READY',
+                          timestamp: new Date().toISOString()
+                        });
+                        
+                        // Hide status after success
+                        setTimeout(() => {
+                          const statusEl = document.getElementById('status');
+                          if (statusEl) statusEl.style.display = 'none';
+                        }, 2000);
+                        
+                      } catch (error) {
+                        console.error('❌ Error creating chart:', error);
+                        updateStatus('Error creating chart: ' + error.message);
+                        sendMessage({
+                          type: 'WEBVIEW_ERROR',
+                          error: 'Chart creation failed',
+                          details: error.message,
+                          timestamp: new Date().toISOString()
+                        });
+                      }
+                    }
+                    
+                    // Create candlestick series
+                    function createCandlestickSeries() {
+                      if (!window.chart || !window.LightweightCharts) return null;
+                      
+                      console.log('📊 Creating candlestick series...');
+                      
+                      // Remove existing series if it exists
+                      if (window.candlestickSeries) {
+                        window.chart.removeSeries(window.candlestickSeries);
+                      }
+                      
+                      // Create new candlestick series with theme colors
+                      window.candlestickSeries = window.chart.addSeries(window.LightweightCharts.CandlestickSeries, {
+                        upColor: '#BAF24A',
+                        downColor: '#FF7584',
+                        borderVisible: false,
+                        wickUpColor: '#BAF24A',
+                        wickDownColor: '#FF7584',
+                        priceLineColor: '${theme.colors.text.default}',
+                        priceLineWidth: 1,
+                        lastValueVisible: true,
+                        title: 'Current',
+                      });
+                      
+                      console.log('✅ Candlestick series created');
+                      return window.candlestickSeries;
+                    }
+                    
+                    // Handle messages from React Native
+                    window.addEventListener('message', function(event) {
+                      try {
+                        const message = JSON.parse(event.data);
+                        console.log('📨 Received message:', message.type);
+                        
+                        switch (message.type) {
+                          case 'SET_CANDLESTICK_DATA':
+                            if (window.chart && message.data && message.data.length > 0) {
+                              console.log('📊 Setting candlestick data, count:', message.data.length);
+                              
+                              // Create candlestick series if it doesn't exist
+                              if (!window.candlestickSeries) {
+                                createCandlestickSeries();
+                              }
+                              
+                              if (window.candlestickSeries) {
+                                window.candlestickSeries.setData(message.data);
+                                window.chart.timeScale().fitContent();
+                                console.log('✅ Candlestick data set successfully');
+                                updateStatus('Chart loaded with ' + message.data.length + ' candles');
+                                
+                                // Hide status after displaying data
+                                setTimeout(() => {
+                                  const statusEl = document.getElementById('status');
+                                  if (statusEl) statusEl.style.display = 'none';
+                                }, 3000);
+                              }
+                            } else {
+                              console.log('⚠️ No candlestick data provided');
+                            }
+                            break;
+                            
+                          case 'ADD_AUXILIARY_LINES':
+                            // Handle TPSL lines if needed later
+                            break;
+                            
+                          default:
+                            console.log('🤷 Unknown message type:', message.type);
+                            break;
+                        }
+                      } catch (error) {
+                        console.error('❌ Error handling message:', error);
+                      }
+                    });
+                    
+                    // Also listen for React Native WebView messages (compatibility)
+                    document.addEventListener('message', function(event) {
+                      window.dispatchEvent(new MessageEvent('message', event));
+                    });
+                    
+                    // Handle window resize
+                    window.addEventListener('resize', function() {
+                      if (window.chart) {
+                        window.chart.applyOptions({
+                          width: window.innerWidth,
+                          height: window.innerHeight
+                        });
+                      }
+                    });
+                    
+                    // Start loading immediately
+                    loadTradingView();
+                    
+                  </script>
+                </body>
+              </html>
+            `,
+            baseUrl: '',
+          }}
           style={[styles.webView, { height, width: '100%' }]} // eslint-disable-line react-native/no-inline-styles
           onMessage={handleWebViewMessage}
           onError={handleWebViewError}
+          onLoad={handleWebViewLoad}
+          onLoadStart={handleWebViewLoadStart}
+          onLoadEnd={handleWebViewLoadEnd}
           onHttpError={(syntheticEvent) => {
             const { nativeEvent } = syntheticEvent;
-            console.error('TradingViewChart: HTTP Error:', nativeEvent);
+            console.error('🌐 WebView HTTP Error:', nativeEvent);
           }}
-          javaScriptEnabled
-          domStorageEnabled
+          // iOS-specific configuration
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          originWhitelist={['*']}
+          allowsInlineMediaPlayback={true}
+          mediaPlaybackRequiresUserAction={false}
+          mixedContentMode="compatibility"
+          startInLoadingState={true}
+          cacheEnabled={false}
+          incognito={true} // This sometimes helps with iOS restrictions
           scrollEnabled={false}
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
           bounces={false}
           scalesPageToFit={false}
-          startInLoadingState={false}
-          allowsInlineMediaPlayback={false}
-          mediaPlaybackRequiresUserAction={false}
-          mixedContentMode="compatibility"
+          // iOS compatibility settings
+          allowsFullscreenVideo={false}
+          allowsBackForwardNavigationGestures={false}
+          dataDetectorTypes="none"
           testID={`${testID || TradingViewChartSelectorsIDs.CONTAINER}-webview`}
           webviewDebuggingEnabled={__DEV__}
         />
