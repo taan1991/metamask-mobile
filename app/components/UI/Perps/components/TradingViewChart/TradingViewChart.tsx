@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { Platform } from 'react-native';
 import { WebView, WebViewMessageEvent } from '@metamask/react-native-webview';
 import { Box, Text, TextVariant } from '@metamask/design-system-react-native';
 import { useStyles } from '../../../../../component-library/hooks';
@@ -50,6 +51,39 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   const chartTimeoutRef = useRef<NodeJS.Timeout>();
   const initialDataSentRef = useRef(false);
   const previousIntervalRef = useRef<string | null>(null);
+
+  // Platform-specific WebView props
+  const platformSpecificProps = useMemo(() => {
+    const baseProps = {
+      javaScriptEnabled: true,
+      domStorageEnabled: true,
+      originWhitelist: ['*'],
+      mixedContentMode: 'compatibility' as const,
+      startInLoadingState: true,
+      scrollEnabled: false,
+      showsHorizontalScrollIndicator: false,
+      showsVerticalScrollIndicator: false,
+      scalesPageToFit: false,
+      webviewDebuggingEnabled: __DEV__,
+    };
+
+    if (Platform.OS === 'ios') {
+      return {
+        ...baseProps,
+        allowsInlineMediaPlayback: true,
+        mediaPlaybackRequiresUserAction: false,
+        cacheEnabled: false,
+        incognito: true,
+        bounces: false,
+        allowsFullscreenVideo: false,
+        allowsBackForwardNavigationGestures: false,
+        dataDetectorTypes: 'none' as const,
+      };
+    }
+
+    // Android-safe configuration
+    return baseProps;
+  }, []);
 
   const htmlContent = useMemo(() => {
     const template = createTradingViewChartTemplate(theme);
@@ -661,27 +695,8 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
             const { nativeEvent } = syntheticEvent;
             console.error('🌐 WebView HTTP Error:', nativeEvent);
           }}
-          // iOS-specific configuration
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          originWhitelist={['*']}
-          allowsInlineMediaPlayback={true}
-          mediaPlaybackRequiresUserAction={false}
-          mixedContentMode="compatibility"
-          startInLoadingState={true}
-          cacheEnabled={false}
-          incognito={true} // This sometimes helps with iOS restrictions
-          scrollEnabled={false}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          scalesPageToFit={false}
-          // iOS compatibility settings
-          allowsFullscreenVideo={false}
-          allowsBackForwardNavigationGestures={false}
-          dataDetectorTypes="none"
           testID={`${testID || TradingViewChartSelectorsIDs.CONTAINER}-webview`}
-          webviewDebuggingEnabled={__DEV__}
+          {...platformSpecificProps}
         />
       </Box>
     </Box>
