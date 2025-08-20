@@ -171,7 +171,7 @@ const Onboarding5: React.FC = () => {
             </Text>
           </Box>
           <Text variant={TextVariant.BodyMD} style={styles.bonusText}>
-            Sign up bonus
+            Sign-up bonus
           </Text>
         </Box>
 
