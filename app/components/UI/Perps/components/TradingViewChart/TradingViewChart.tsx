@@ -48,6 +48,8 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   const [webViewError, setWebViewError] = useState<string | null>(null);
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   const chartTimeoutRef = useRef<NodeJS.Timeout>();
+  const initialDataSentRef = useRef(false);
+  const previousIntervalRef = useRef<string | null>(null);
 
   const htmlContent = useMemo(() => {
     const template = createTradingViewChartTemplate(theme);
@@ -96,6 +98,8 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
               '✅ CHART_READY received - chart initialized successfully!',
             );
             setIsChartReady(true);
+            // Reset data sent flag so we can send initial data to new chart
+            initialDataSentRef.current = false;
 
             // Clear timeout since chart is ready
             if (chartTimeoutRef.current) {
@@ -240,19 +244,54 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
     };
   }, []);
 
-  // Send real candle data to chart
+  // Send candle data to chart (with smart view preservation)
   useEffect(() => {
+    const currentInterval = candleData?.interval;
+    const intervalChanged =
+      previousIntervalRef.current !== null &&
+      previousIntervalRef.current !== currentInterval;
+
+    // Reset flags when interval changes to allow refitting
+    if (intervalChanged) {
+      console.log('🔄 Interval changed:', {
+        from: previousIntervalRef.current,
+        to: currentInterval,
+      });
+      initialDataSentRef.current = false;
+
+      // Reset chart data flag in WebView so it refits content
+      if (webViewRef.current) {
+        webViewRef.current.postMessage(
+          JSON.stringify({
+            type: 'RESET_CHART_DATA_FLAG',
+          }),
+        );
+      }
+    }
+
+    // Update the previous interval
+    previousIntervalRef.current = currentInterval || null;
+
     console.log('📊 Data send effect:', {
       isChartReady,
       hasWebView: !!webViewRef.current,
       hasCandleData: !!candleData?.candles?.length,
       webViewLoaded,
+      initialDataSent: initialDataSentRef.current,
+      intervalChanged,
+      currentInterval,
     });
 
-    if (!isChartReady || !webViewRef.current) {
-      console.log('⚠️ Not ready to send data:', {
+    if (
+      !isChartReady ||
+      !webViewRef.current ||
+      (!intervalChanged && initialDataSentRef.current)
+    ) {
+      console.log('⚠️ Not ready to send data or already sent:', {
         isChartReady,
         hasWebView: !!webViewRef.current,
+        alreadySent: initialDataSentRef.current,
+        intervalChanged,
       });
       return;
     }
@@ -264,6 +303,11 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
     if (candleData?.candles && candleData.candles.length > 0) {
       dataToSend = formatCandleData(candleData);
       dataSource = 'real';
+      console.log('📤 Sending chart data:', {
+        count: dataToSend.length,
+        intervalChanged,
+        willRefit: intervalChanged || !initialDataSentRef.current,
+      });
     }
 
     if (dataToSend) {
@@ -271,16 +315,20 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
         type: 'SET_CANDLESTICK_DATA',
         data: dataToSend,
         source: dataSource,
+        shouldRefit: intervalChanged || !initialDataSentRef.current, // Tell chart whether to refit
       };
       webViewRef.current.postMessage(JSON.stringify(message));
+      initialDataSentRef.current = true; // Mark as sent
+
+      if (intervalChanged) {
+        console.log('✅ Chart data sent with refit for interval change');
+      } else {
+        console.log(
+          '✅ Initial chart data sent, future updates will preserve view',
+        );
+      }
     }
-  }, [
-    isChartReady,
-    candleDataVersion,
-    formatCandleData,
-    candleData,
-    webViewLoaded,
-  ]);
+  }, [isChartReady, candleData]);
 
   // Update auxiliary lines when they change
   useEffect(() => {
@@ -359,6 +407,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                     // Global variables
                     window.chart = null;
                     window.candlestickSeries = null;
+                    window.chartHasData = false;
                     
                     // Helper function to send messages to React Native
                     function sendMessage(message) {
@@ -418,7 +467,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                         updateStatus('Creating chart instance...');
                         
                         // Create chart with proper theme colors
-                        window.chart = window.LightweightCharts.createChart(container, {
+                        const chart = window.LightweightCharts.createChart(container, {
                           width: window.innerWidth,
                           height: window.innerHeight,
                           layout: {
@@ -453,6 +502,10 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                             borderColor: 'transparent',
                           },
                         });
+                        
+                        // Store chart reference globally and reset data flag
+                        window.chart = chart;
+                        window.chartHasData = false;
                         
                         console.log('✅ Chart created successfully');
                         updateStatus('Chart created successfully!');
@@ -516,6 +569,11 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                         console.log('📨 Received message:', message.type);
                         
                         switch (message.type) {
+                          case 'RESET_CHART_DATA_FLAG':
+                            window.chartHasData = false;
+                            console.log('🔄 Chart data flag reset - next data will refit view');
+                            break;
+                            
                           case 'SET_CANDLESTICK_DATA':
                             if (window.chart && message.data && message.data.length > 0) {
                               console.log('📊 Setting candlestick data, count:', message.data.length);
@@ -527,7 +585,21 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                               
                               if (window.candlestickSeries) {
                                 window.candlestickSeries.setData(message.data);
-                                window.chart.timeScale().fitContent();
+                                
+                                // Fit content when explicitly requested (interval changes) or initial load
+                                const shouldFitContent = message.shouldRefit || !window.chartHasData;
+                                if (shouldFitContent) {
+                                  window.chart.timeScale().fitContent();
+                                  window.chartHasData = true;
+                                  if (message.shouldRefit) {
+                                    console.log('📊 Data updated with refit for interval change');
+                                  } else {
+                                    console.log('📊 Initial data loaded - fitted content to view');
+                                  }
+                                } else {
+                                  console.log('📊 Data updated - preserved user view state');
+                                }
+                                
                                 console.log('✅ Candlestick data set successfully');
                                 updateStatus('Chart loaded with ' + message.data.length + ' candles');
                                 
