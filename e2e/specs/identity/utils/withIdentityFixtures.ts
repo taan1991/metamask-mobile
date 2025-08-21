@@ -23,6 +23,7 @@ export interface IdentityFixtureOptions {
   >;
   sharedUserStorageController?: UserStorageMockttpController;
   mockBalancesAccounts?: string[];
+  disableSynchronization?: boolean;
 }
 
 export interface IdentityTestContext {
@@ -45,6 +46,7 @@ export async function withIdentityFixtures(
     ],
     userStorageOverrides,
     sharedUserStorageController,
+    disableSynchronization = false,
   } = options;
 
   await withFixtures(
@@ -52,6 +54,7 @@ export async function withIdentityFixtures(
       fixture,
       restartDevice,
       testSpecificMock,
+      disableSynchronization,
     },
     async ({ mockServer }) => {
       if (!mockServer) {

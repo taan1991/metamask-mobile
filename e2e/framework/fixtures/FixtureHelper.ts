@@ -465,6 +465,7 @@ export async function withFixtures(
     languageAndLocale,
     permissions = {},
     endTestfn,
+    disableSynchronization = false,
   } = options;
 
   // Prepare android devices for testing to avoid having this in all tests
@@ -531,7 +532,13 @@ export async function withFixtures(
       });
     }
 
+    if (disableSynchronization) {
+      await device.disableSynchronization();
+    }
     await testSuite({ contractRegistry, mockServer, localNodes });
+    if (disableSynchronization) {
+      await device.enableSynchronization();
+    }
   } catch (error) {
     logger.error('Error in withFixtures:', error);
     throw error;

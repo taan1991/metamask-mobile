@@ -45,6 +45,7 @@ describe(SmokeWalletPlatform('Analytics during import wallet flow'), () => {
         fixture: new FixtureBuilder().withOnboardingFixture().build(),
         restartDevice: true,
         testSpecificMock,
+        disableSynchronization: true,
       },
       async ({ mockServer }) => {
         if (!mockServer) {

@@ -24,6 +24,11 @@ describe(SmokeNetworkExpansion('Solana Token Transfer Functionality'), () => {
   beforeAll(async () => {
     jest.setTimeout(150000);
     await TestHelpers.launchApp();
+    await device.disableSynchronization();
+  });
+
+  afterAll(async () => {
+    await device.enableSynchronization();
   });
 
   it('should import wallet with a Solana account', async () => {

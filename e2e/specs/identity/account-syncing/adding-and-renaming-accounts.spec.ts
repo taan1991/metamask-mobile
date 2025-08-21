@@ -45,6 +45,7 @@ describe(
         {
           userStorageFeatures: [USER_STORAGE_FEATURE_NAMES.accounts],
           sharedUserStorageController,
+          disableSynchronization: true,
         },
         async ({ userStorageMockttpController }) => {
           await loginToApp();
@@ -94,6 +95,7 @@ describe(
         {
           userStorageFeatures: [USER_STORAGE_FEATURE_NAMES.accounts],
           sharedUserStorageController,
+          disableSynchronization: true,
         },
         async ({ mockServer: _mockServer, userStorageMockttpController }) => {
           const { prepareEventsEmittedCounter } = arrangeTestUtils(
@@ -156,6 +158,7 @@ describe(
           userStorageFeatures: [USER_STORAGE_FEATURE_NAMES.accounts],
           sharedUserStorageController,
           fixture: onboardingFixture,
+          disableSynchronization: true,
         },
         async () => {
           // Go through onboarding again to ensure accounts and names are synced (sanity check)
