@@ -59,6 +59,8 @@ import type {
   UpdatePositionTPSLParams,
   WithdrawParams,
   WithdrawResult,
+  GetHistoricalPortfolioParams,
+  HistoricalPortfolioResult,
 } from './types';
 import { getEnvironment } from './utils';
 
@@ -105,6 +107,9 @@ export type PerpsControllerState = {
   // Account data (persisted) - using HyperLiquid property names
   positions: Position[];
   accountState: AccountState | null;
+  extendedAccountState: {
+    accountValue1dAgo?: string;
+  } | null;
 
   // Order management
   pendingOrders: OrderParams[];
@@ -146,6 +151,7 @@ export const getDefaultPerpsControllerState = (): PerpsControllerState => ({
   connectionStatus: 'disconnected',
   positions: [],
   accountState: null,
+  extendedAccountState: null,
   pendingOrders: [],
   depositInProgress: false,
   lastDepositResult: null,
@@ -168,6 +174,7 @@ export const getDefaultPerpsControllerState = (): PerpsControllerState => ({
 const metadata = {
   positions: { persist: true, anonymous: false },
   accountState: { persist: true, anonymous: false },
+  extendedAccountState: { persist: true, anonymous: false },
   isTestnet: { persist: true, anonymous: false },
   activeProvider: { persist: true, anonymous: false },
   connectionStatus: { persist: false, anonymous: false },
@@ -268,6 +275,10 @@ export type PerpsControllerActions =
   | {
       type: 'PerpsController:markFirstOrderCompleted';
       handler: PerpsController['markFirstOrderCompleted'];
+    }
+  | {
+      type: 'PerpsController:getHistoricalPortfolio';
+      handler: PerpsController['getHistoricalPortfolio'];
     };
 
 /**
@@ -995,15 +1006,42 @@ export class PerpsController extends BaseController<
 
     try {
       const provider = this.getActiveProvider();
-      const accountState = await provider.getAccountState(params);
+
+      // Get both current account state and historical portfolio data
+      const [accountState, historicalPortfolio] = await Promise.all([
+        provider.getAccountState(params),
+        provider.getHistoricalPortfolio(params).catch((error) => {
+          DevLogger.log(
+            'Failed to get historical portfolio, continuing without it:',
+            error,
+          );
+          return;
+        }),
+      ]);
+
+      let historicalPortfolioToUse = historicalPortfolio;
+      // fallback to the current account total value if possible
+      if (!historicalPortfolio || !historicalPortfolio.accountValue1dAgo) {
+        historicalPortfolioToUse = {
+          accountValue1dAgo: accountState.totalValue || '0',
+          timestamp: 0,
+        };
+      }
 
       // Only update state if the provider call succeeded
       DevLogger.log(
-        'PerpsController: Updating Redux store with accountState:',
-        accountState,
+        'PerpsController: Updating Redux store with accountState and historical data:',
+        { accountState, historicalPortfolio: historicalPortfolioToUse },
       );
+
       this.update((state) => {
         state.accountState = accountState;
+        // Update extended account state with historical data
+        if (!state.extendedAccountState) {
+          state.extendedAccountState = {};
+        }
+        state.extendedAccountState.accountValue1dAgo =
+          historicalPortfolioToUse?.accountValue1dAgo;
         state.lastUpdateTimestamp = Date.now();
         state.lastError = null; // Clear any previous errors
       });
@@ -1014,6 +1052,8 @@ export class PerpsController extends BaseController<
         data: {
           success: true,
           hasBalance: parseFloat(accountState.totalBalance) > 0,
+          hasHistoricalData:
+            parseFloat(historicalPortfolioToUse?.accountValue1dAgo || '0') > 0,
         },
       });
 
@@ -1036,6 +1076,44 @@ export class PerpsController extends BaseController<
           success: false,
           error: errorMessage,
         },
+      });
+
+      // Re-throw the error so components can handle it appropriately
+      throw error;
+    }
+  }
+
+  /**
+   * Get historical portfolio data for percentage calculations
+   */
+  async getHistoricalPortfolio(
+    params?: GetHistoricalPortfolioParams,
+  ): Promise<HistoricalPortfolioResult> {
+    try {
+      const provider = this.getActiveProvider();
+      const result = await provider.getHistoricalPortfolio(params);
+
+      // Update the extended account state with the retrieved data
+      this.update((state) => {
+        if (!state.extendedAccountState) {
+          state.extendedAccountState = {};
+        }
+        state.extendedAccountState.accountValue1dAgo = result.accountValue1dAgo;
+        state.lastUpdateTimestamp = Date.now();
+        state.lastError = null; // Clear any previous errors
+      });
+
+      return result;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to get historical portfolio';
+
+      // Update error state
+      this.update((state) => {
+        state.lastError = errorMessage;
+        state.lastUpdateTimestamp = Date.now();
       });
 
       // Re-throw the error so components can handle it appropriately

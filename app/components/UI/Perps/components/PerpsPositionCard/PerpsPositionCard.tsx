@@ -29,7 +29,6 @@ import {
   formatPrice,
   formatPositionSize,
 } from '../../utils/formatUtils';
-import { calculatePnLPercentageFromUnrealized } from '../../utils/pnlCalculations';
 import styleSheet from './PerpsPositionCard.styles';
 import { PerpsPositionCardSelectorsIDs } from '../../../../../../e2e/selectors/Perps/Perps.selectors';
 import { usePerpsAssetMetadata } from '../../hooks/usePerpsAssetsMetadata';
@@ -127,11 +126,10 @@ const PerpsPositionCard: React.FC<PerpsPositionCardProps> = ({
   };
 
   const pnlNum = parseFloat(position.unrealizedPnl);
-  const pnlPercentage = calculatePnLPercentageFromUnrealized({
-    unrealizedPnl: pnlNum,
-    entryPrice: parseFloat(position.entryPrice),
-    size: parseFloat(position.size),
-  });
+  const returnOnEquityPercentage = (
+    parseFloat(position.returnOnEquity) * 100
+  ).toFixed(1);
+
   const isPositive24h =
     position.cumulativeFunding.sinceChange &&
     parseFloat(position.cumulativeFunding.sinceChange) >= 0;
@@ -199,7 +197,8 @@ const PerpsPositionCard: React.FC<PerpsPositionCardProps> = ({
                 variant={TextVariant.BodySM}
                 color={isPositive24h ? TextColor.Success : TextColor.Error}
               >
-                {formatPnl(pnlNum)} ({formatPercentage(pnlPercentage)})
+                {formatPnl(pnlNum)} (
+                {formatPercentage(returnOnEquityPercentage)})
               </Text>
             </View>
           </View>

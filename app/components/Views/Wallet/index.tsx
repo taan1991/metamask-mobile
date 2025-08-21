@@ -161,6 +161,8 @@ import { selectSeedlessOnboardingLoginFlow } from '../../../selectors/seedlessOn
 import { InitSendLocation } from '../confirmations/constants/send';
 import { useSendNavigation } from '../confirmations/hooks/useSendNavigation';
 import { selectSolanaOnboardingModalEnabled } from '../../../selectors/multichain/multichain';
+import { PerpsStreamProvider } from '../../UI/Perps/providers/PerpsStreamManager';
+import { PerpsConnectionProvider } from '../../UI/Perps/providers/PerpsConnectionProvider';
 
 const createStyles = ({ colors }: Theme) =>
   RNStyleSheet.create({
@@ -217,6 +219,7 @@ const WalletTokensTabView = React.memo(
   }) => {
     const isPerpsEnabled = useSelector(selectPerpsEnabledFlag);
     const { navigation, onChangeTab, defiEnabled, collectiblesEnabled } = props;
+    const isEvmSelected = useSelector(selectIsEvmNetworkSelected);
 
     const theme = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -278,7 +281,7 @@ const WalletTokensTabView = React.memo(
           onChangeTab={onChangeTab}
         >
           <Tokens {...tokensTabProps} key={tokensTabProps.key} />
-          {isPerpsEnabled && (
+          {isPerpsEnabled && isEvmSelected && (
             <PerpsTabView {...perpsTabProps} key={perpsTabProps.key} />
           )}
           {defiEnabled && (
@@ -972,7 +975,11 @@ const Wallet = ({
           </View>
         ) : null}
         <>
-          <PortfolioBalance />
+          <PerpsConnectionProvider>
+            <PerpsStreamProvider>
+              <PortfolioBalance />
+            </PerpsStreamProvider>
+          </PerpsConnectionProvider>
           <AssetDetailsActions
             displayFundButton={displayFundButton}
             displaySwapsButton={displaySwapsButton}
